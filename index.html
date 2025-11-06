@@ -29,6 +29,10 @@
         .btn-primary {
             @apply w-full bg-blue-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98];
         }
+        /* Tombol Laporan (Hijau) */
+        .btn-report {
+             @apply block w-full text-center bg-green-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98];
+        }
         .btn-secondary {
             @apply bg-gray-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-150;
         }
@@ -62,7 +66,15 @@
         
         <!-- Sidebar Navigasi -->
         <nav id="sidebar" class="w-full md:w-1/4 bg-white p-4 shadow-lg md:min-h-[calc(100vh-64px)] overflow-y-auto">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Daftar SOP</h2>
+            
+            <!-- [PERUBAHAN] Tombol Laporan ditambahkan di sini -->
+            <div class="pb-4 mb-4 border-b">
+                 <a href="laporan.html" target="_blank" class="btn-report">
+                    Buka Laporan
+                </a>
+            </div>
+            
+            <h2 class="text-lg font-semibold mb-4 text-gray-700">Daftar SOP</h2>
             <ul id="sop-list" class="space-y-2">
                 <!-- Daftar SOP akan di-generate oleh JavaScript -->
             </ul>
@@ -86,25 +98,6 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // --- PENGATURAN MANUAL UNTUK LOKAL / HOSTING DI LUAR CANVAS ---
-        // Kita komentari bagian ini karena kita menjalankan di dalam Canvas
-        /*
-        const firebaseConfig = {
-          apiKey: "GANTI_DENGAN_API_KEY_ANDA",
-          authDomain: "GANTI_DENGAN_AUTH_DOMAIN_ANDA",
-          projectId: "GANTI_DENGAN_PROJECT_ID_ANDA",
-          storageBucket: "GANTI_DENGAN_STORAGE_BUCKET_ANDA",
-          messagingSenderId: "GANTI_DENGAN_SENDER_ID_ANDA",
-          appId: "GANTI_DENGAN_APP_ID_ANDA"
-        };
-        
-        // Atur appId & token secara manual karena kita di luar Canvas
-        const appId = firebaseConfig.projectId || 'default-app-id';
-        const initialAuthToken = null;
-        */
-        // --- AKHIR PENGATURAN MANUAL ---
-
 
         // --- DATA APLIKASI ---
 
@@ -219,7 +212,6 @@
                 forms: [
                     { id: 'laporan_harian_kasir', title: 'Laporan Penjualan Harian (Kasir)' },
                     { id: 'form_selisih_kas', title: 'Form Catatan Selisih Kas' }
-                    // Rekap Bulanan adalah kompilasi, bukan form isian primer
                 ]
             },
             {
@@ -531,7 +523,7 @@
                         inputHtml = `<select id="${field.name}" name="${field.name}" class="form-input" ${requiredAttr}>
                                         <option value="">-- Pilih --</option>
                                         ${options}
-                                     </select>`;
+                                    </select>`;
                         break;
                     case 'checkbox':
                         inputHtml = `<input type="checkbox" id="${field.name}" name="${field.name}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">`;
@@ -695,19 +687,19 @@
                     formId: currentFormId,
                     formTitle: formDefinitions[currentFormId].title,
                     submittedAt: new Date().toISOString(),
-                    submittedByUserId: userId
+                    submittedByUserId: userId // Tetap simpan siapa yg submit, tapi di koleksi publik
                 };
                 
-                // Tentukan path koleksi berdasarkan aturan:
-                // /artifacts/{appId}/users/{userId}/{collection_name}
-                // Kita gunakan formId sebagai collection_name
-                const collectionPath = `artifacts/${appId}/users/${userId}/${currentFormId}`;
+                // [PERUBAHAN] Simpan ke koleksi PUBLIK, bukan user
+                // Path lama: `artifacts/${appId}/users/${userId}/${currentFormId}`
+                // Path baru: `artifacts/${appId}/public/data/${currentFormId}`
+                const collectionPath = `artifacts/${appId}/public/data/${currentFormId}`;
                 
                 // Simpan ke Firestore
                 const docRef = await addDoc(collection(db, collectionPath), submissionData);
 
                 // --- Handle Success ---
-                console.log('--- FORM SUBMITTED to Firestore ---');
+                console.log('--- FORM SUBMITTED to Firestore (Public) ---');
                 console.log('Form:', formDefinitions[currentFormId].title);
                 console.log('Data:', submissionData);
                 console.log('Document ID:', docRef.id);
@@ -763,10 +755,6 @@
                                 await signInAnonymously(auth);
                             }
                             
-                            // Baris di bawah ini dikomentari karena kita menggunakan
-                            // token kustom atau anonim di atas
-                            // await signInAnonymously(auth);
-
                             userId = auth.currentUser?.uid || crypto.randomUUID();
                         } catch (authError) {
                             console.error("Firebase Auth sign-in failed:", authError);
