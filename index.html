@@ -2,14 +2,16 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adamart Kopkar AKM - Portal SOP & Form</title>
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <title>Adamart Kopkar AKM - Portal Terpadu</title>
     <!-- Memuat Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuat font Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Halaman ini tidak lagi menggunakan Chart.js, jadi kita bisa menghapusnya jika mau -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -20,7 +22,7 @@
             color: #0284c7; /*-blue-600 */
             font-weight: 600;
         }
-        .form-input {
+        .form-input, .form-select {
             @apply w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 invalid:border-red-500 invalid:text-red-600 focus:invalid:ring-red-500 focus:invalid:border-red-500;
         }
         .form-label {
@@ -34,7 +36,7 @@
              @apply block w-full text-center bg-green-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98];
         }
         .btn-secondary {
-            @apply bg-gray-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-150;
+            @apply w-full text-center bg-gray-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-150;
         }
         .card {
             @apply bg-white p-6 rounded-lg shadow-md;
@@ -52,347 +54,143 @@
         .fade-in-content {
             animation: fadeIn 0.4s ease-out;
         }
+        
+        /* Style dari Laporan */
+        .table-auto th {
+            @apply px-4 py-2 bg-gray-100 text-left text-sm font-medium text-gray-700;
+        }
+        .table-auto td {
+            @apply px-4 py-2 border-t border-gray-200 text-sm text-gray-800;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
 
     <!-- Header -->
     <header class="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-10">
-        <h1 class="text-2xl font-bold text-center">Adamart Kopkar AKM - Portal SOP & Formulir</h1>
+        <h1 id="header-title" class="text-2xl font-bold text-center">Adamart Kopkar AKM - Portal SOP & Formulir</h1>
     </header>
 
     <!-- Konten Utama -->
     <div class="flex flex-col md:flex-row min-h-[calc(100vh-64px)]">
         
-        <!-- Sidebar Navigasi -->
+        <!-- Sidebar Navigasi (Konten dinamis) -->
         <nav id="sidebar" class="w-full md:w-1/4 bg-white p-4 shadow-lg md:min-h-[calc(100vh-64px)] overflow-y-auto">
-            
-            <!-- [PERUBAHAN] Tombol Laporan ditambahkan di sini -->
-            <div class="pb-4 mb-4 border-b">
-                 <a href="laporan.html" target="_blank" class="btn-report">
-                    Buka Laporan
-                </a>
-            </div>
-            
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Daftar SOP</h2>
-            <ul id="sop-list" class="space-y-2">
-                <!-- Daftar SOP akan di-generate oleh JavaScript -->
-            </ul>
+            <!-- Konten Sidebar akan di-generate oleh JavaScript -->
         </nav>
 
-        <!-- Area Konten Utama -->
+        <!-- Area Konten Utama (Konten dinamis) -->
         <main id="main-content" class="w-full md:w-3/4 p-6 overflow-y-auto">
-            <!-- Konten SOP atau Form akan di-generate oleh JavaScript -->
+            <!-- Konten Utama akan di-generate oleh JavaScript -->
         </main>
     </div>
 
-    <!-- SCRIPT UTAMA (DIUBAH MENJADI MODULE) -->
+    <!-- SCRIPT UTAMA (GABUNGAN) -->
     <script type="module">
-        // --- Firebase Imports ---
+        // --- Firebase Imports (Digabung) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, addDoc, collection, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, addDoc, collection, setLogLevel, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Config (dari environment) ---
-        // Variabel ini akan otomatis diisi oleh lingkungan Canvas
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // --- DATA APLIKASI ---
-
-        // Data 6 SOP yang Anda berikan
+        // --- DATA APLIKASI (SOP) ---
         const sopData = [
-            {
-                id: 'sop1',
-                title: 'SOP 1: Pembelian dan Pengadaan Barang',
-                role: 'Manajer',
-                tujuan: 'Menstandarkan proses pembelian barang untuk memastikan ketersediaan stok di seluruh site minimarket koperasi.',
-                ruangLingkup: 'Berlaku untuk manajer pusat yang bertugas membeli barang kebutuhan toko dari kota.',
-                langkah: [
-                    'Evaluasi permintaan restock dari site (Kelanis, 73, Induksi).',
-                    'Buat daftar pembelian berdasarkan stok minimum dan permintaan.',
-                    'Beli barang ke toko grosir atau supplier terpercaya di kota.',
-                    'Periksa kualitas, kuantitas, dan tanggal kedaluwarsa barang.',
-                    'Catat transaksi pembelian di log pembelian atau sistem (nama barang, jumlah, harga, pemasok, tanggal).',
-                    'Kelompokkan barang untuk masing-masing site.',
-                    'Buat surat jalan dan dokumen pengiriman per site.',
-                    'Siapkan armada dan jadwal pengiriman.',
-                    'Serahkan barang ke kasir site, pastikan tanda tangan penerimaan.'
-                ],
-                flowchart: 'Evaluasi kebutuhan → Beli barang → Cek & catat → Susun logistik per site → Kirim barang → Serah terima dengan kasir',
-                forms: [
-                    { id: 'form_pembelian', title: 'Form Pembelian Barang' },
-                    { id: 'surat_jalan', title: 'Surat Jalan Distribusi' }
-                ]
-            },
-            {
-                id: 'sop2',
-                title: 'SOP 2: Penerimaan Barang oleh Kasir Site',
-                role: 'Kasir Site',
-                tujuan: 'Menjamin barang diterima sesuai jumlah, kondisi, dan dokumentasi dari pusat.',
-                ruangLingkup: 'Dilaksanakan oleh kasir di site Kelanis, 73, dan Induksi saat menerima kiriman barang.',
-                langkah: [
-                    'Terima kiriman barang dari armada logistik pusat.',
-                    'Cocokkan isi barang dengan surat jalan.',
-                    'Periksa kondisi fisik barang dan tanggal kedaluwarsa.',
-                    'Catat temuan selisih/kerusakan di Form Penerimaan Barang.',
-                    'Tanda tangan dokumen serah terima dan kirim konfirmasi ke manajer.',
-                    'Masukkan data barang masuk ke sistem POS atau log stok manual.',
-                    'Tata barang ke gudang/rak sesuai kategori dan prinsip FIFO.'
-                ],
-                flowchart: 'Terima barang → Cocokkan surat jalan → Cek kondisi → Catat dan konfirmasi → Input ke sistem → Simpan sesuai FIFO',
-                forms: [
-                    { id: 'form_penerimaan', title: 'Form Penerimaan Barang' },
-                    { id: 'checklist_pengecekan', title: 'Checklist Pengecekan Barang' }
-                ]
-            },
-            {
-                id: 'sop3',
-                title: 'SOP 3: Pengelolaan Stok dan Inventaris',
-                role: 'Kasir Site',
-                tujuan: 'Mengatur penyimpanan, pemantauan, dan pelaporan stok barang agar terhindar dari kekosongan atau kerugian.',
-                ruangLingkup: 'Dilaksanakan oleh kasir site untuk seluruh barang yang ada di minimarket site.',
-                langkah: [
-                    'Simpan barang sesuai kategori dan ikuti prinsip FIFO.',
-                    'Input stok masuk dan keluar secara berkala ke sistem POS atau kartu stok.',
-                    'Tetapkan dan pantau batas stok minimum setiap barang.',
-                    'Lakukan pengecekan stok cepat harian (rak dan gudang).',
-                    'Laporkan permintaan restok mingguan ke manajer.',
-                    'Lakukan stock opname fisik secara berkala (bulanan).',
-                    'Pisahkan barang rusak/kedaluwarsa, catat, dan laporkan.',
-                    'Jaga kebersihan area stok, hindari kontaminasi dan kelembapan.'
-                ],
-                flowchart: 'Barang diterima → Simpan & input stok → Monitor stok harian → Kirim permintaan → Stock opname → Evaluasi & pelaporan',
-                forms: [
-                    { id: 'kartu_stok', title: 'Kartu Stok Barang (Input Manual)' },
-                    { id: 'form_restok', title: 'Form Permintaan Restok' },
-                    { id: 'form_stock_opname', title: 'Form Stock Opname Bulanan' },
-                    { id: 'log_barang_rusak', title: 'Log Barang Rusak/Kedaluwarsa' }
-                ]
-            },
-            {
-                id: 'sop4',
-                title: 'SOP 4: Penjualan Barang oleh Kasir (POS)',
-                role: 'Kasir Site',
-                tujuan: 'Menstandarkan proses pelayanan dan pencatatan transaksi agar tercipta layanan cepat dan pencatatan akurat.',
-                ruangLingkup: 'Dilakukan oleh kasir site saat melayani transaksi harian kepada karyawan.',
-                langkah: [
-                    'Siapkan kasir: nyalakan sistem POS, sediakan kas kecil, cek label harga.',
-                    'Sambut karyawan, bantu temukan barang yang dicari.',
-                    'Pindai barang menggunakan POS atau input manual.',
-                    'Sebutkan total belanja, terima pembayaran (tunai atau e-wallet jika tersedia).',
-                    'Cetak dan berikan struk pembelian.',
-                    'Catat transaksi jika POS tidak merekam otomatis.',
-                    'Simpan uang di laci aman, pisahkan uang kas dan pribadi.',
-                    'Berikan layanan ramah, bantu kemas barang, jaga etika.'
-                ],
-                flowchart: 'Buka kasir → Layani & scan barang → Hitung & terima pembayaran → Cetak struk → Simpan kas → Tutup transaksi',
-                forms: [
-                    { id: 'laporan_manual_harian', title: 'Laporan Penjualan Manual Harian (Backup)' }
-                ]
-            },
-            {
-                id: 'sop5',
-                title: 'SOP 5: Pelaporan Keuangan Harian dan Bulanan',
-                role: 'Kasir & Manajer',
-                tujuan: 'Memastikan semua transaksi tercatat dan laporan penjualan disusun secara transparan serta akurat.',
-                ruangLingkup: 'Dilaksanakan oleh kasir dan manajer minimarket koperasi site tambang.',
-                langkah: [
-                    'Tutup kas setiap akhir hari: hitung uang tunai dan cocokkan dengan laporan POS.',
-                    'Cetak laporan harian dari POS atau gunakan log manual.',
-                    'Catat selisih (jika ada), dan beri penjelasan bila perlu.',
-                    'Simpan uang di tempat aman (laci/brankas terkunci).',
-                    'Kirim laporan harian dan foto uang kas ke manajer (via WA/email).',
-                    'Manajer kompilasi laporan semua site setiap akhir bulan.',
-                    'Susun laporan keuangan bulanan (penjualan, pembelian, laba/rugi).',
-                    'Laporan disampaikan ke pengurus koperasi/manajemen tambang.'
-                ],
-                flowchart: 'Tutup kas → Cetak laporan → Simpan kas → Kirim laporan harian → Kompilasi bulanan → Laporan ke pengurus',
-                forms: [
-                    { id: 'laporan_harian_kasir', title: 'Laporan Penjualan Harian (Kasir)' },
-                    { id: 'form_selisih_kas', title: 'Form Catatan Selisih Kas' }
-                ]
-            },
-            {
-                id: 'sop6',
-                title: 'SOP 6: Penanganan Selisih Stok dan Barang Rusak',
-                role: 'Kasir & Manajer',
-                tujuan: 'Menangani perbedaan stok dan kerusakan barang secara sistematis agar tidak menimbulkan kerugian koperasi.',
-                ruangLingkup: 'Dijalankan oleh kasir dan dilaporkan kepada manajer.',
-                langkah: [
-                    'Saat stock opname, bandingkan stok fisik dengan sistem/kartu stok.',
-                    'Catat selisih positif/negatif di Form Selisih Stok.',
-                    'Periksa kemungkinan salah input, pencurian, atau kesalahan transaksi.',
-                    'Laporkan hasil pengecekan dan dugaan penyebab ke manajer.',
-                    'Untuk barang rusak/kedaluwarsa: pisahkan dan tandai.',
-                    'Catat di Form Barang Rusak/Kedaluwarsa.',
-                    'Manajer evaluasi apakah retur ke supplier atau dimusnahkan.',
-                    'Lakukan penyesuaian stok jika disetujui oleh manajer.'
-                ],
-                flowchart: 'Stock opname → Temuan selisih → Evaluasi & lapor → Barang rusak dipisah → Keputusan retur/musnah → Koreksi stok',
-                forms: [
-                    { id: 'form_selisih_stok', title: 'Form Selisih Stok' },
-                    { id: 'log_barang_rusak', title: 'Log Barang Rusak/Kedaluwarsa' }, // Re-use dari SOP 3
-                    { id: 'form_penyesuaian_stok', title: 'Form Penyesuaian Stok' }
-                ]
-            }
+            // ... (Data SOP 1-6 Anda ada di sini, saya potong agar ringkas) ...
+            { id: 'sop1', title: 'SOP 1: Pembelian dan Pengadaan Barang', role: 'Manajer', tujuan: 'Menstandarkan proses pembelian barang untuk memastikan ketersediaan stok di seluruh site minimarket koperasi.', ruangLingkup: 'Berlaku untuk manajer pusat yang bertugas membeli barang kebutuhan toko dari kota.', langkah: [
+                'Evaluasi permintaan restock dari site (Kelanis, 73, Induksi).',
+                'Buat daftar pembelian berdasarkan stok minimum dan permintaan.',
+                'Beli barang ke toko grosir atau supplier terpercaya di kota.',
+                'Periksa kualitas, kuantitas, dan tanggal kedaluwarsa barang.',
+                'Catat transaksi pembelian di log pembelian atau sistem (nama barang, jumlah, harga, pemasok, tanggal).',
+                'Kelompokkan barang untuk masing-masing site.',
+                'Buat surat jalan dan dokumen pengiriman per site.',
+                'Siapkan armada dan jadwal pengiriman.',
+                'Serahkan barang ke kasir site, pastikan tanda tangan penerimaan.'
+            ], flowchart: 'Evaluasi kebutuhan → Beli barang → Cek & catat → Susun logistik per site → Kirim barang → Serah terima dengan kasir', forms: [{ id: 'form_pembelian', title: 'Form Pembelian Barang' }, { id: 'surat_jalan', title: 'Surat Jalan Distribusi' }] },
+            { id: 'sop2', title: 'SOP 2: Penerimaan Barang oleh Kasir Site', role: 'Kasir Site', tujuan: 'Menjamin barang diterima sesuai jumlah, kondisi, dan dokumentasi dari pusat.', ruangLingkup: 'Dilaksanakan oleh kasir di site Kelanis, 73, dan Induksi saat menerima kiriman barang.', langkah: [
+                'Terima kiriman barang dari armada logistik pusat.',
+                'Cocokkan isi barang dengan surat jalan.',
+                'Periksa kondisi fisik barang dan tanggal kedaluwarsa.',
+                'Catat temuan selisih/kerusakan di Form Penerimaan Barang.',
+                'Tanda tangan dokumen serah terima dan kirim konfirmasi ke manajer.',
+                'Masukkan data barang masuk ke sistem POS atau log stok manual.',
+                'Tata barang ke gudang/rak sesuai kategori dan prinsip FIFO.'
+            ], flowchart: 'Terima barang → Cocokkan surat jalan → Cek kondisi → Catat dan konfirmasi → Input ke sistem → Simpan sesuai FIFO', forms: [{ id: 'form_penerimaan', title: 'Form Penerimaan Barang' }, { id: 'checklist_pengecekan', title: 'Checklist Pengecekan Barang' }] },
+            { id: 'sop3', title: 'SOP 3: Pengelolaan Stok dan Inventaris', role: 'Kasir Site', tujuan: 'Mengatur penyimpanan, pemantauan, dan pelaporan stok barang agar terhindar dari kekosongan atau kerugian.', ruangLingkup: 'Dilaksanakan oleh kasir site untuk seluruh barang yang ada di minimarket site.', langkah: [
+                'Simpan barang sesuai kategori dan ikuti prinsip FIFO.',
+                'Input stok masuk dan keluar secara berkala ke sistem POS atau kartu stok.',
+                'Tetapkan dan pantau batas stok minimum setiap barang.',
+                'Lakukan pengecekan stok cepat harian (rak dan gudang).',
+                'Laporkan permintaan restock mingguan ke manajer.',
+                'Lakukan stock opname fisik secara berkala (bulanan).',
+                'Pisahkan barang rusak/kedaluwarsa, catat, dan laporkan.',
+                'Jaga kebersihan area stok, hindari kontaminasi dan kelembapan.'
+            ], flowchart: 'Barang diterima → Simpan & input stok → Monitor stok harian → Kirim permintaan → Stock opname → Evaluasi & pelaporan', forms: [{ id: 'kartu_stok', title: 'Kartu Stok Barang (Input Manual)' }, { id: 'form_restok', title: 'Form Permintaan Restok' }, { id: 'form_stock_opname', title: 'Form Stock Opname Bulanan' }, { id: 'log_barang_rusak', title: 'Log Barang Rusak/Kedaluwarsa' }] },
+            { id: 'sop4', title: 'SOP 4: Penjualan Barang oleh Kasir (POS)', role: 'Kasir Site', tujuan: 'Menstandarkan proses pelayanan dan pencatatan transaksi agar tercipta layanan cepat dan pencatatan akurat.', ruangLingkup: 'Dilakukan oleh kasir site saat melayani transaksi harian kepada karyawan.', langkah: [
+                'Siapkan kasir: nyalakan sistem POS, sediakan kas kecil, cek label harga.',
+                'Sambut karyawan, bantu temukan barang yang dicari.',
+                'Pindai barang menggunakan POS atau input manual.',
+                'Sebutkan total belanja, terima pembayaran (tunai atau e-wallet jika tersedia).',
+                'Cetak dan berikan struk pembelian.',
+                'Catat transaksi jika POS tidak merekam otomatis.',
+                'Simpan uang di laci aman, pisahkan uang kas dan pribadi.',
+                'Berikan layanan ramah, bantu kemas barang, jaga etika.'
+            ], flowchart: 'Buka kasir → Layani & scan barang → Hitung & terima pembayaran → Cetak struk → Simpan kas → Tutup transaksi', forms: [{ id: 'laporan_manual_harian', title: 'Laporan Penjualan Manual Harian (Backup)' }] },
+            { id: 'sop5', title: 'SOP 5: Pelaporan Keuangan Harian dan Bulanan', role: 'Kasir & Manajer', tujuan: 'Memastikan semua transaksi tercatat dan laporan penjualan disusun secara transparan serta akurat.', ruangLingkup: 'Dilaksanakan oleh kasir dan manajer minimarket koperasi site tambang.', langkah: [
+                'Tutup kas setiap akhir hari: hitung uang tunai dan cocokkan dengan laporan POS.',
+                'Cetak laporan harian dari POS atau gunakan log manual.',
+                'Catat selisih (jika ada), dan beri penjelasan bila perlu.',
+                'Simpan uang di tempat aman (laci/brankas terkunci).',
+                'Kirim laporan harian dan foto uang kas ke manajer (via WA/email).',
+                'Manajer kompilasi laporan semua site setiap akhir bulan.',
+                'Susun laporan keuangan bulanan (penjualan, pembelian, laba/rugi).',
+                'Laporan disampaikan ke pengurus koperasi/manajemen tambang.'
+            ], flowchart: 'Tutup kas → Cetak laporan → Simpan kas → Kirim laporan harian → Kompilasi bulanan → Laporan ke pengurus', forms: [{ id: 'laporan_harian_kasir', title: 'Laporan Penjualan Harian (Kasir)' }, { id: 'form_selisih_kas', title: 'Form Catatan Selisih Kas' }] },
+            { id: 'sop6', title: 'SOP 6: Penanganan Selisih Stok dan Barang Rusak', role: 'Kasir & Manajer', tujuan: 'Menangani perbedaan stok dan kerusakan barang secara sistematis agar tidak menimbulkan kerugian koperasi.', ruangLingkup: 'Dijalankan oleh kasir dan dilaporkan kepada manajer.', langkah: [
+                'Saat stock opname, bandingkan stok fisik dengan sistem/kartu stok.',
+                'Catat selisih positif/negatif di Form Selisih Stok.',
+                'Periksa kemungkinan salah input, pencurian, atau kesalahan transaksi.',
+                'Laporkan hasil pengecekan dan dugaan penyebab ke manajer.',
+                'Untuk barang rusak/kedaluwarsa: pisahkan dan tandai.',
+                'Catat di Form Barang Rusak/Kedaluwarsa.',
+                'Manajer evaluasi apakah retur ke supplier atau dimusnahkan.',
+                'Lakukan penyesuaian stok jika disetujui oleh manajer.'
+            ], flowchart: 'Stock opname → Temuan selisih → Evaluasi & lapor → Barang rusak dipisah → Keputusan retur/musnah → Koreksi stok', forms: [{ id: 'form_selisih_stok', title: 'Form Selisih Stok' }, { id: 'log_barang_rusak', title: 'Log Barang Rusak/Kedaluwarsa' }, { id: 'form_penyesuaian_stok', title: 'Form Penyesuaian Stok' }] }
         ];
 
-        // Definisi field untuk setiap formulir
+        // --- DATA APLIKASI (Definisi Form untuk Input) ---
         const formDefinitions = {
-            'form_pembelian': {
-                title: 'Form Pembelian Barang',
-                fields: [
-                    { name: 'tanggal_beli', label: 'Tanggal Pembelian', type: 'date', required: true },
-                    { name: 'pemasok', label: 'Nama Pemasok/Toko Grosir', type: 'text', required: true },
-                    { name: 'nama_barang', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'jumlah', label: 'Jumlah', type: 'number', required: true },
-                    { name: 'harga_satuan', label: 'Harga Satuan (Rp)', type: 'number', required: true },
-                    { name: 'site_tujuan', label: 'Site Tujuan', type: 'select', options: ['Kelanis', '73', 'Induksi', 'Semua'], required: true },
-                    { name: 'catatan', label: 'Catatan (Kualitas, ED, dll)', type: 'textarea' }
-                ]
-            },
-            'surat_jalan': {
-                title: 'Surat Jalan Distribusi',
-                fields: [
-                    { name: 'no_surat_jalan', label: 'Nomor Surat Jalan', type: 'text', required: true },
-                    { name: 'tanggal_kirim', label: 'Tanggal Pengiriman', type: 'date', required: true },
-                    { name: 'dari', label: 'Dari (Pengirim)', type: 'text', value: 'Manajer Pusat', disabled: true },
-                    { name: 'tujuan_site', label: 'Tujuan (Site)', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'armada', label: 'Armada (No. Polisi/Driver)', type: 'text', required: true },
-                    { name: 'daftar_barang', label: 'Daftar Barang & Kuantitas', type: 'textarea', required: true, placeholder: 'Contoh:\nIndomie Goreng: 5 dus\nKopi Kapal Api: 10 renteng' },
-                    { name: 'diserahkan_oleh', label: 'Diserahkan Oleh', type: 'text', required: true }
-                ]
-            },
-            'form_penerimaan': {
-                title: 'Form Penerimaan Barang',
-                fields: [
-                    { name: 'no_surat_jalan', label: 'Nomor Surat Jalan (Sesuai kiriman)', type: 'text', required: true },
-                    { name: 'tanggal_terima', label: 'Tanggal Terima', type: 'date', required: true },
-                    { name: 'site_penerima', label: 'Site Penerima', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'diterima_oleh', label: 'Diterima Oleh (Nama Kasir)', type: 'text', required: true },
-                    { name: 'temuan_selisih', label: 'Temuan Selisih (Jumlah)', type: 'textarea', placeholder: 'Catat jika ada barang yang kurang atau lebih' },
-                    { name: 'temuan_kerusakan', label: 'Temuan Kerusakan (Fisik/ED)', type: 'textarea', placeholder: 'Catat barang yang rusak, penyok, atau dekat kedaluwarsa' }
-                ]
-            },
-            'checklist_pengecekan': {
-                title: 'Checklist Pengecekan Barang',
-                fields: [
-                    { name: 'no_surat_jalan_cek', label: 'Nomor Surat Jalan yang Dicek', type: 'text', required: true },
-                    { name: 'kasir_pengecek', label: 'Nama Kasir Pengecek', type: 'text', required: true },
-                    { name: 'cek_surat_jalan', label: 'Kesesuaian Barang dengan Surat Jalan', type: 'checkbox' },
-                    { name: 'cek_kualitas_fisik', label: 'Kondisi Fisik Barang (Tidak rusak/penyok)', type: 'checkbox' },
-                    { name: 'cek_ed', label: 'Tanggal Kedaluwarsa (Aman)', type: 'checkbox' },
-                    { name: 'catatan_cek', label: 'Catatan Tambahan', type: 'textarea' }
-                ]
-            },
-            'kartu_stok': {
-                title: 'Input Kartu Stok Barang (Manual)',
-                fields: [
-                    { name: 'tanggal_input', label: 'Tanggal Transaksi', type: 'date', required: true },
-                    { name: 'site', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_barang_stok', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'tipe_transaksi', label: 'Tipe Transaksi', type: 'select', options: ['Masuk (Pembelian)', 'Keluar (Penjualan)', 'Penyesuaian'], required: true },
-                    { name: 'jumlah_stok', label: 'Jumlah', type: 'number', required: true },
-                    { name: 'keterangan_stok', label: 'Keterangan (No. Bon/Faktur)', type: 'text' }
-                ]
-            },
-            'form_restok': {
-                title: 'Form Permintaan Restok',
-                fields: [
-                    { name: 'tanggal_permintaan', label: 'Tanggal Permintaan', type: 'date', required: true },
-                    { name: 'site_permintaan', label: 'Site (Pengaju)', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_kasir_pengaju', label: 'Nama Kasir (Pengaju)', type: 'text', required: true },
-                    { name: 'nama_barang_restok', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'stok_saat_ini', label: 'Stok Saat Ini', type: 'number', required: true },
-                    { name: 'jumlah_diminta', label: 'Jumlah Diminta', type: 'number', required: true },
-                    { name: 'alasan_permintaan', label: 'Alasan (Stok minimum/Permintaan khusus)', type: 'text' }
-                ]
-            },
-            'form_stock_opname': {
-                title: 'Form Stock Opname Bulanan',
-                fields: [
-                    { name: 'tanggal_opname', label: 'Tanggal Stock Opname', type: 'date', required: true },
-                    { name: 'site_opname', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'pelaksana_opname', label: 'Pelaksana (Kasir)', type: 'text', required: true },
-                    { name: 'nama_barang_opname', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'stok_sistem_pos', label: 'Stok (Sistem/POS)', type: 'number', required: true },
-                    { name: 'stok_fisik', label: 'Stok (Fisik Hitungan)', type: 'number', required: true },
-                    { name: 'keterangan_opname', label: 'Keterangan (Jika ada selisih)', type: 'textarea' }
-                ]
-            },
-            'log_barang_rusak': {
-                title: 'Log Barang Rusak / Kedaluwarsa',
-                fields: [
-                    { name: 'tanggal_temuan', label: 'Tanggal Temuan', type: 'date', required: true },
-                    { name: 'site_temuan', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_barang_rusak', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'jumlah_rusak', label: 'Jumlah', type: 'number', required: true },
-                    { name: 'alasan', label: 'Alasan', type: 'select', options: ['Rusak Fisik', 'Kedaluwarsa', 'Kontaminasi'], required: true },
-                    { name: 'tindak_lanjut_usulan', label: 'Usulan Tindak Lanjut', type: 'select', options: ['Retur ke Supplier', 'Pemusnahan'], required: true }
-                ]
-            },
-            'laporan_manual_harian': {
-                title: 'Laporan Penjualan Manual Harian (Backup)',
-                fields: [
-                    { name: 'tanggal_laporan_manual', label: 'Tanggal Laporan', type: 'date', required: true },
-                    { name: 'site_laporan_manual', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_kasir_laporan', label: 'Nama Kasir', type: 'text', required: true },
-                    { name: 'total_penjualan_manual', label: 'Total Penjualan (Rp)', type: 'number', required: true },
-                    { name: 'keterangan_manual', label: 'Keterangan (Misal: POS Offline)', type: 'textarea', required: true }
-                ]
-            },
-            'laporan_harian_kasir': {
-                title: 'Laporan Penjualan Harian (Kasir)',
-                fields: [
-                    { name: 'tanggal_laporan_harian', label: 'Tanggal Laporan', type: 'date', required: true },
-                    { name: 'site_laporan_harian', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_kasir_harian', label: 'Nama Kasir', type: 'text', required: true },
-                    { name: 'total_penjualan_pos', label: 'Total Penjualan (Laporan POS)', type: 'number', required: true },
-                    { name: 'total_tunai_fisik', label: 'Total Uang Tunai Fisik (Dihitung)', type: 'number', required: true },
-                    { name: 'total_ewallet_pos', label: 'Total E-Wallet (Laporan POS)', type: 'number', required: true },
-                    { name: 'catatan_laporan', label: 'Catatan (Jika ada selisih, dll)', type: 'textarea' }
-                ]
-            },
-            'form_selisih_kas': {
-                title: 'Form Catatan Selisih Kas',
-                fields: [
-                    { name: 'tanggal_selisih_kas', label: 'Tanggal', type: 'date', required: true },
-                    { name: 'site_selisih_kas', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'kasir_bertugas', label: 'Kasir Bertugas', type: 'text', required: true },
-                    { name: 'kas_sistem', label: 'Kas Menurut Sistem (POS)', type: 'number', required: true },
-                    { name: 'kas_fisik', label: 'Kas Fisik (Hitungan)', type: 'number', required: true },
-                    { name: 'penjelasan_selisih', label: 'Penjelasan Selisih', type: 'textarea', required: true }
-                ]
-            },
-            'form_selisih_stok': {
-                title: 'Form Selisih Stok (Hasil Stock Opname)',
-                fields: [
-                    { name: 'tanggal_selisih_stok', label: 'Tanggal Temuan (SO)', type: 'date', required: true },
-                    { name: 'site_selisih_stok', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_barang_selisih', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'stok_sistem_selisih', label: 'Stok Sistem', type: 'number', required: true },
-                    { name: 'stok_fisik_selisih', label: 'Stok Fisik', type: 'number', required: true },
-                    { name: 'dugaan_penyebab', label: 'Dugaan Penyebab Selisih', type: 'textarea', placeholder: 'Salah input, pencurian, kesalahan transaksi, dll.', required: true }
-                ]
-            },
-            'form_penyesuaian_stok': {
-                title: 'Form Penyesuaian Stok',
-                fields: [
-                    { name: 'tanggal_penyesuaian', label: 'Tanggal Penyesuaian', type: 'date', required: true },
-                    { name: 'site_penyesuaian', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true },
-                    { name: 'nama_barang_penyesuaian', label: 'Nama Barang', type: 'text', required: true },
-                    { name: 'alasan_penyesuaian', label: 'Alasan Penyesuaian', type: 'select', options: ['Hasil SO (Selisih)', 'Barang Rusak', 'Barang Kedaluwarsa', 'Retur Supplier'], required: true },
-                    { name: 'jumlah_penyesuaian', label: 'Jumlah Penyesuaian', type: 'number', required: true, placeholder: 'Gunakan + (plus) untuk menambah, - (minus) untuk mengurangi' },
-                    { name: 'disetujui_oleh', label: 'Disetujui Oleh (Manajer)', type: 'text', required: true }
-                ]
-            }
+            'form_pembelian': { title: 'Form Pembelian Barang', fields: [ { name: 'tanggal_beli', label: 'Tanggal Pembelian', type: 'date', required: true }, { name: 'pemasok', label: 'Nama Pemasok/Toko Grosir', type: 'text', required: true }, { name: 'nama_barang', label: 'Nama Barang', type: 'text', required: true }, { name: 'jumlah', label: 'Jumlah', type: 'number', required: true }, { name: 'harga_satuan', label: 'Harga Satuan (Rp)', type: 'number', required: true }, { name: 'site_tujuan', label: 'Site Tujuan', type: 'select', options: ['Kelanis', '73', 'Induksi', 'Semua'], required: true }, { name: 'catatan', label: 'Catatan (Kualitas, ED, dll)', type: 'textarea' } ] },
+            'surat_jalan': { title: 'Surat Jalan Distribusi', fields: [ { name: 'no_surat_jalan', label: 'Nomor Surat Jalan', type: 'text', required: true }, { name: 'tanggal_kirim', label: 'Tanggal Pengiriman', type: 'date', required: true }, { name: 'dari', label: 'Dari (Pengirim)', type: 'text', value: 'Manajer Pusat', disabled: true }, { name: 'tujuan_site', label: 'Tujuan (Site)', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'armada', label: 'Armada (No. Polisi/Driver)', type: 'text', required: true }, { name: 'daftar_barang', label: 'Daftar Barang & Kuantitas', type: 'textarea', required: true, placeholder: 'Contoh:\nIndomie Goreng: 5 dus\nKopi Kapal Api: 10 renteng' }, { name: 'diserahkan_oleh', label: 'Diserahkan Oleh', type: 'text', required: true } ] },
+            'form_penerimaan': { title: 'Form Penerimaan Barang', fields: [ { name: 'no_surat_jalan', label: 'Nomor Surat Jalan (Sesuai kiriman)', type: 'text', required: true }, { name: 'tanggal_terima', label: 'Tanggal Terima', type: 'date', required: true }, { name: 'site_penerima', label: 'Site Penerima', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'diterima_oleh', label: 'Diterima Oleh (Nama Kasir)', type: 'text', required: true }, { name: 'temuan_selisih', label: 'Temuan Selisih (Jumlah)', type: 'textarea', placeholder: 'Catat jika ada barang yang kurang atau lebih' }, { name: 'temuan_kerusakan', label: 'Temuan Kerusakan (Fisik/ED)', type: 'textarea', placeholder: 'Catat barang yang rusak, penyok, atau dekat kedaluwarsa' } ] },
+            'checklist_pengecekan': { title: 'Checklist Pengecekan Barang', fields: [ { name: 'no_surat_jalan_cek', label: 'Nomor Surat Jalan yang Dicek', type: 'text', required: true }, { name: 'kasir_pengecek', label: 'Nama Kasir Pengecek', type: 'text', required: true }, { name: 'cek_surat_jalan', label: 'Kesesuaian Barang dengan Surat Jalan', type: 'checkbox' }, { name: 'cek_kualitas_fisik', label: 'Kondisi Fisik Barang (Tidak rusak/penyok)', type: 'checkbox' }, { name: 'cek_ed', label: 'Tanggal Kedaluwarsa (Aman)', type: 'checkbox' }, { name: 'catatan_cek', label: 'Catatan Tambahan', type: 'textarea' } ] },
+            'kartu_stok': { title: 'Input Kartu Stok Barang (Manual)', fields: [ { name: 'tanggal_input', label: 'Tanggal Transaksi', type: 'date', required: true }, { name: 'site', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_barang_stok', label: 'Nama Barang', type: 'text', required: true }, { name: 'tipe_transaksi', label: 'Tipe Transaksi', type: 'select', options: ['Masuk (Pembelian)', 'Keluar (Penjualan)', 'Penyesuaian'], required: true }, { name: 'jumlah_stok', label: 'Jumlah', type: 'number', required: true }, { name: 'keterangan_stok', label: 'Keterangan (No. Bon/Faktur)', type: 'text' } ] },
+            'form_restok': { title: 'Form Permintaan Restok', fields: [ { name: 'tanggal_permintaan', label: 'Tanggal Permintaan', type: 'date', required: true }, { name: 'site_permintaan', label: 'Site (Pengaju)', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_kasir_pengaju', label: 'Nama Kasir (Pengaju)', type: 'text', required: true }, { name: 'nama_barang_restok', label: 'Nama Barang', type: 'text', required: true }, { name: 'stok_saat_ini', label: 'Stok Saat Ini', type: 'number', required: true }, { name: 'jumlah_diminta', label: 'Jumlah Diminta', type: 'number', required: true }, { name: 'alasan_permintaan', label: 'Alasan (Stok minimum/Permintaan khusus)', type: 'text' } ] },
+            'form_stock_opname': { title: 'Form Stock Opname Bulanan', fields: [ { name: 'tanggal_opname', label: 'Tanggal Stock Opname', type: 'date', required: true }, { name: 'site_opname', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'pelaksana_opname', label: 'Pelaksana (Kasir)', type: 'text', required: true }, { name: 'nama_barang_opname', label: 'Nama Barang', type: 'text', required: true }, { name: 'stok_sistem_pos', label: 'Stok (Sistem/POS)', type: 'number', required: true }, { name: 'stok_fisik', label: 'Stok (Fisik Hitungan)', type: 'number', required: true }, { name: 'keterangan_opname', label: 'Keterangan (Jika ada selisih)', type: 'textarea' } ] },
+            'log_barang_rusak': { title: 'Log Barang Rusak / Kedaluwarsa', fields: [ { name: 'tanggal_temuan', label: 'Tanggal Temuan', type: 'date', required: true }, { name: 'site_temuan', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_barang_rusak', label: 'Nama Barang', type: 'text', required: true }, { name: 'jumlah_rusak', label: 'Jumlah', type: 'number', required: true }, { name: 'alasan', label: 'Alasan', type: 'select', options: ['Rusak Fisik', 'Kedaluwarsa', 'Kontaminasi'], required: true }, { name: 'tindak_lanjut_usulan', label: 'Usulan Tindak Lanjut', type: 'select', options: ['Retur ke Supplier', 'Pemusnahan'], required: true } ] },
+            'laporan_manual_harian': { title: 'Laporan Penjualan Manual Harian (Backup)', fields: [ { name: 'tanggal_laporan_manual', label: 'Tanggal Laporan', type: 'date', required: true }, { name: 'site_laporan_manual', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_kasir_laporan', label: 'Nama Kasir', type: 'text', required: true }, { name: 'total_penjualan_manual', label: 'Total Penjualan (Rp)', type: 'number', required: true }, { name: 'keterangan_manual', label: 'Keterangan (Misal: POS Offline)', type: 'textarea', required: true } ] },
+            'laporan_harian_kasir': { title: 'Laporan Penjualan Harian (Kasir)', fields: [ { name: 'tanggal_laporan_harian', label: 'Tanggal Laporan', type: 'date', required: true }, { name: 'site_laporan_harian', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_kasir_harian', label: 'Nama Kasir', type: 'text', required: true }, { name: 'total_penjualan_pos', label: 'Total Penjualan (Laporan POS)', type: 'number', required: true }, { name: 'total_tunai_fisik', label: 'Total Uang Tunai Fisik (Dihitung)', type: 'number', required: true }, { name: 'total_ewallet_pos', label: 'Total E-Wallet (Laporan POS)', type: 'number', required: true }, { name: 'catatan_laporan', label: 'Catatan (Jika ada selisih, dll)', type: 'textarea' } ] },
+            'form_selisih_kas': { title: 'Form Catatan Selisih Kas', fields: [ { name: 'tanggal_selisih_kas', label: 'Tanggal', type: 'date', required: true }, { name: 'site_selisih_kas', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'kasir_bertugas', label: 'Kasir Bertugas', type: 'text', required: true }, { name: 'kas_sistem', label: 'Kas Menurut Sistem (POS)', type: 'number', required: true }, { name: 'kas_fisik', label: 'Kas Fisik (Hitungan)', type: 'number', required: true }, { name: 'penjelasan_selisih', label: 'Penjelasan Selisih', type: 'textarea', required: true } ] },
+            'form_selisih_stok': { title: 'Form Selisih Stok (Hasil Stock Opname)', fields: [ { name: 'tanggal_selisih_stok', label: 'Tanggal Temuan (SO)', type: 'date', required: true }, { name: 'site_selisih_stok', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_barang_selisih', label: 'Nama Barang', type: 'text', required: true }, { name: 'stok_sistem_selisih', label: 'Stok Sistem', type: 'number', required: true }, { name: 'stok_fisik_selisih', label: 'Stok Fisik', type: 'number', required: true }, { name: 'dugaan_penyebab', label: 'Dugaan Penyebab Selisih', type: 'textarea', placeholder: 'Salah input, pencurian, kesalahan transaksi, dll.', required: true } ] },
+            'form_penyesuaian_stok': { title: 'Form Penyesuaian Stok', fields: [ { name: 'tanggal_penyesuaian', label: 'Tanggal Penyesuaian', type: 'date', required: true }, { name: 'site_penyesuaian', label: 'Site', type: 'select', options: ['Kelanis', '73', 'Induksi'], required: true }, { name: 'nama_barang_penyesuaian', label: 'Nama Barang', type: 'text', required: true }, { name: 'alasan_penyesuaian', label: 'Alasan Penyesuaian', type: 'select', options: ['Hasil SO (Selisih)', 'Barang Rusak', 'Barang Kedaluwarsa', 'Retur Supplier'], required: true }, { name: 'jumlah_penyesuaian', label: 'Jumlah Penyesuaian', type: 'number', required: true, placeholder: 'Gunakan + (plus) untuk menambah, - (minus) untuk mengurangi' }, { name: 'disetujui_oleh', label: 'Disetujui Oleh (Manajer)', type: 'text', required: true } ] }
+        };
+
+        // --- [BARU] DATA APLIKASI (Definisi Form untuk Laporan) ---
+        // Ini adalah subset dari field di atas, khusus untuk ditampilkan di tabel laporan
+        const reportFormDefinitions = {
+            'form_pembelian': { title: 'Form Pembelian Barang', fields: [{ name: 'tanggal_beli', label: 'Tgl Beli' }, { name: 'pemasok', label: 'Pemasok' }, { name: 'nama_barang', label: 'Barang' }, { name: 'jumlah', label: 'Jml' }, { name: 'harga_satuan', label: 'Harga' }, { name: 'site_tujuan', label: 'Site' }] },
+            'form_penerimaan': { title: 'Form Penerimaan Barang', fields: [{ name: 'no_surat_jalan', label: 'No. SJ' }, { name: 'tanggal_terima', label: 'Tgl Terima' }, { name: 'site_penerima', label: 'Site' }, { name: 'diterima_oleh', label: 'Penerima' }, { name: 'temuan_selisih', label: 'Temuan Selisih' }, { name: 'temuan_kerusakan', label: 'Temuan Kerusakan' }] },
+            'form_selisih_stok': { title: 'Form Selisih Stok (Hasil SO)', fields: [{ name: 'tanggal_selisih_stok', label: 'Tgl SO' }, { name: 'site_selisih_stok', label: 'Site' }, { name: 'nama_barang_selisih', label: 'Barang' }, { name: 'stok_sistem_selisih', label: 'Stok Sistem' }, { name: 'stok_fisik_selisih', label: 'Stok Fisik' }, { name: 'dugaan_penyebab', label: 'Dugaan Penyebab'}] },
+            'log_barang_rusak': { title: 'Log Barang Rusak / Kedaluwarsa', fields: [{ name: 'tanggal_temuan', label: 'Tgl Temuan' }, { name: 'site_temuan', label: 'Site' }, { name: 'nama_barang_rusak', label: 'Barang' }, { name: 'jumlah_rusak', label: 'Jml' }, { name: 'alasan', label: 'Alasan' }] },
         };
 
         // --- STATE APLIKASI ---
         let currentSopId = 'sop1'; // SOP yang aktif saat ini
-        let currentView = 'sop'; // Tampilan saat ini ('sop' or 'form')
+        let currentView = 'sop'; // 'sop', 'form', atau 'report'
         let currentFormId = null; // Form yang aktif saat ini
 
         // --- FIREBASE STATE ---
@@ -401,13 +199,50 @@
         let isAuthReady = false;
 
         // --- Elemen DOM ---
-        const sopListEl = document.getElementById('sop-list');
+        const headerTitleEl = document.getElementById('header-title');
+        const sidebarEl = document.getElementById('sidebar');
         const mainContentEl = document.getElementById('main-content');
 
-        // --- FUNGSI RENDER ---
+        // --- FUNGSI RENDER (ROUTER) ---
 
-        /** Merender daftar SOP di sidebar */
+        /** Merender Sidebar berdasarkan View */
         function renderSidebar() {
+            if (currentView === 'report') {
+                renderReportSidebar();
+            } else {
+                renderSopSidebar();
+            }
+        }
+
+        /** Merender Konten Utama berdasarkan View */
+        function renderMainContent() {
+            if (currentView === 'sop') {
+                headerTitleEl.textContent = 'Adamart Kopkar AKM - Portal SOP & Formulir';
+                renderSopDetail();
+            } else if (currentView === 'form') {
+                headerTitleEl.textContent = 'Adamart Kopkar AKM - Portal SOP & Formulir';
+                renderFormView();
+            } else if (currentView === 'report') {
+                headerTitleEl.textContent = 'Laporan Pembelian & Penerimaan';
+                renderProcurementReport(); // Render kerangka laporan
+            }
+        }
+
+        // --- FUNGSI RENDER (SOP & FORM) ---
+
+        /** Merender sidebar untuk tampilan SOP */
+        function renderSopSidebar() {
+            sidebarEl.innerHTML = `
+                <div class="pb-4 mb-4 border-b">
+                    <button onclick="showReportView()" class="btn-report w-full">
+                        Buka Laporan
+                    </button>
+                </div>
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Daftar SOP</h2>
+                <ul id="sop-list" class="space-y-2"></ul>
+            `;
+            
+            const sopListEl = document.getElementById('sop-list');
             sopListEl.innerHTML = ''; // Kosongkan dulu
             sopData.forEach(sop => {
                 const li = document.createElement('li');
@@ -424,26 +259,15 @@
             });
         }
 
-        /** Merender konten utama (SOP detail atau Form) */
-        function renderMainContent() {
-            if (currentView === 'sop') {
-                renderSopDetail();
-            } else if (currentView === 'form') {
-                renderFormView();
-            }
-        }
-
         /** Merender detail SOP yang dipilih */
         function renderSopDetail() {
             const sop = sopData.find(s => s.id === currentSopId);
             if (!sop) return;
 
-            // Membuat daftar langkah
             const langkahList = sop.langkah.map(langkah => 
                 `<li class="mb-2 text-gray-700">${langkah}</li>`
             ).join('');
 
-            // Membuat tombol formulir
             const formButtons = sop.forms.map(form => 
                 `<button 
                     class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-150"
@@ -455,39 +279,28 @@
 
             mainContentEl.innerHTML = `
                 <div class="card space-y-6 fade-in-content">
-                    <!-- Judul -->
                     <h2 class="text-3xl font-bold text-gray-800">${sop.title}</h2>
                     <span class="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">${sop.role}</span>
-
-                    <!-- Tujuan -->
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-gray-700">Tujuan</h3>
                         <p class="text-gray-700">${sop.tujuan}</p>
                     </div>
-
-                    <!-- Ruang Lingkup -->
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-gray-700">Ruang Lingkup</h3>
                         <p class="text-gray-700">${sop.ruangLingkup}</p>
                     </div>
-
-                    <!-- Langkah-langkah -->
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-gray-700">Langkah-langkah</h3>
                         <ol class="list-decimal list-inside space-y-2 pl-4">
                             ${langkahList}
                         </ol>
                     </div>
-
-                    <!-- Flowchart -->
                     <div>
                         <h3 class="text-xl font-semibold mb-2 text-gray-700">Flowchart Sederhana</h3>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-800 font-medium">${sop.flowchart}</p>
                         </div>
                     </div>
-
-                    <!-- Formulir Terkait -->
                     <div>
                         <h3 class="text-xl font-semibold mb-4 text-gray-700">Formulir Terkait</h3>
                         <div class="flex flex-wrap gap-4">
@@ -506,7 +319,6 @@
                 return;
             }
 
-            // Membuat field formulir
             const formFields = formDef.fields.map(field => {
                 let inputHtml = '';
                 const requiredAttr = field.required ? 'required' : '';
@@ -527,7 +339,6 @@
                         break;
                     case 'checkbox':
                         inputHtml = `<input type="checkbox" id="${field.name}" name="${field.name}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">`;
-                        // Sedikit ubah layout untuk checkbox
                         return `<div class="mb-4 flex items-center">
                                     ${inputHtml}
                                     <label for="${field.name}" class="ml-2 block text-sm font-medium text-gray-700">${field.label}</label>
@@ -544,20 +355,13 @@
 
             mainContentEl.innerHTML = `
                 <div class="card max-w-2xl mx-auto fade-in-content">
-                    <!-- Tombol Kembali -->
-                    <button 
-                        class="text-blue-600 hover:underline mb-4"
-                        onclick="goBackToSop()"
-                    >
+                    <button class="text-blue-600 hover:underline mb-4" onclick="goBackToSop()">
                         &larr; Kembali ke Detail SOP
                     </button>
-
-                    <!-- Judul Form -->
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">${formDef.title}</h2>
-
+                    
                     <!-- Pesan Sukses (tersembunyi) -->
                     <div id="success-message" class="hidden flex items-center bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-                        <!-- Ikon Sukses (Checkmark Circle) -->
                         <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
@@ -569,7 +373,6 @@
 
                     <!-- Pesan Error (tersembunyi) -->
                     <div id="error-message" class="hidden flex items-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
-                        <!-- Ikon Error (Alert Triangle) -->
                         <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                         </svg>
@@ -579,7 +382,6 @@
                         </div>
                     </div>
 
-                    <!-- Formulir -->
                     <form id="digital-form" onsubmit="handleFormSubmit(event)">
                         ${formFields}
                         <div class="mt-6">
@@ -593,12 +395,14 @@
                 </div>
             `;
             
-            // Update status tombol setelah render
             updateFormButtonStatus();
         }
 
         /** Memperbarui status tombol submit berdasarkan status auth Firebase */
         function updateFormButtonStatus() {
+            // Fungsi ini hanya relevan untuk view 'form'
+            if (currentView !== 'form') return; 
+            
             const submitButton = document.getElementById('submit-button');
             const authStatus = document.getElementById('auth-status');
             
@@ -614,16 +418,73 @@
         }
 
 
-        // --- FUNGSI EVENT HANDLER ---
+        // --- FUNGSI RENDER (LAPORAN) ---
+        
+        /** Merender sidebar untuk tampilan Laporan */
+        function renderReportSidebar() {
+            sidebarEl.innerHTML = `
+                <div class="pb-4 mb-4 border-b">
+                    <button onclick="showSopDetail('sop1')" class="btn-secondary w-full">
+                        &larr; Kembali ke Portal SOP
+                    </button>
+                </div>
+                <h2 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Dashboard Laporan</h2>
+                <p class="text-sm text-gray-600">Laporan ini merangkum data dari pembelian, penerimaan, selisih, dan barang rusak.</p>
+                <div id="auth-status-report" class="text-sm text-gray-500 mt-4">
+                    <p>${isAuthReady ? '<span class="text-green-600">Terhubung ke database.</span>' : 'Menghubungkan...'}</p>
+                </div>
+            `;
+        }
+
+        /** Merender kerangka (skeleton) untuk konten laporan */
+        function renderProcurementReport() {
+            mainContentEl.innerHTML = `
+                <div id="report-content" class="space-y-6 fade-in-content">
+                    <!-- 1. Judul & Loading -->
+                    <h2 id="report-title" class="text-3xl font-bold text-gray-800">Laporan Pembelian & Penerimaan</h2>
+                    <div id="report-loading" class="card text-center">
+                        <p class="text-gray-700 font-medium">Memuat data laporan, harap tunggu...</p>
+                    </div>
+
+                    <!-- 2. KPI / Metrics -->
+                    <div id="report-metrics" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- KPI akan diisi oleh loadProcurementData() -->
+                    </div>
+
+                    <!-- 3. Tabel Data -->
+                    <div id="report-tables" class="hidden space-y-6">
+                        <div class="card">
+                            <h3 class="text-lg font-semibold mb-4">Data Pembelian (dari Form Pembelian)</h3>
+                            <div id="table-container-pembelian" class="overflow-x-auto"></div>
+                        </div>
+                        <div class="card">
+                            <h3 class="text-lg font-semibold mb-4">Data Penerimaan (dari Form Penerimaan)</h3>
+                            <div id="table-container-penerimaan" class="overflow-x-auto"></div>
+                        </div>
+                        <div class="card">
+                            <h3 class="text-lg font-semibold mb-4">Data Selisih Stok (dari Form Selisih Stok)</h3>
+                            <div id="table-container-selisih" class="overflow-x-auto"></div>
+                        </div>
+                        <div class="card">
+                            <h3 class="text-lg font-semibold mb-4">Data Barang Rusak (dari Log Barang Rusak)</h3>
+                            <div id="table-container-rusak" class="overflow-x-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+
+        // --- FUNGSI EVENT HANDLER (NAVIGASI) ---
 
         /** Pindah ke tampilan detail SOP */
         function showSopDetail(sopId) {
             currentSopId = sopId;
             currentView = 'sop';
             currentFormId = null;
-            renderSidebar(); // Update highlight
+            renderSidebar();
             renderMainContent();
-            window.scrollTo(0, 0); // Scroll ke atas
+            window.scrollTo(0, 0);
         }
 
         /** Pindah ke tampilan formulir */
@@ -631,7 +492,7 @@
             currentFormId = formId;
             currentView = 'form';
             renderMainContent();
-            window.scrollTo(0, 0); // Scroll ke atas
+            window.scrollTo(0, 0);
         }
 
         /** Kembali ke tampilan detail SOP dari formulir */
@@ -639,12 +500,29 @@
             currentView = 'sop';
             currentFormId = null;
             renderMainContent();
-            window.scrollTo(0, 0); // Scroll ke atas
+            window.scrollTo(0, 0);
+        }
+        
+        /** Pindah ke tampilan Laporan */
+        function showReportView() {
+            currentView = 'report';
+            renderSidebar();
+            renderMainContent(); // Ini merender kerangka laporan
+            
+            // Panggil data loader SETELAH auth siap
+            if (isAuthReady) {
+                loadProcurementData();
+            } else {
+                // Jika auth belum siap, inisialisasi akan memanggilnya nanti
+                console.log("Menunggu Auth siap sebelum memuat data laporan...");
+            }
         }
 
-        /** Menangani submit formulir (simulasi) */
+        // --- FUNGSI EVENT HANDLER (AKSI) ---
+
+        /** Menangani submit formulir */
         async function handleFormSubmit(event) {
-            event.preventDefault(); // Mencegah reload halaman
+            event.preventDefault(); 
             
             const submitButton = document.getElementById('submit-button');
             const submitText = document.getElementById('submit-text');
@@ -653,14 +531,12 @@
             const errorMessage = document.getElementById('error-message');
             const errorText = document.getElementById('error-text');
 
-            // --- Cek Auth ---
             if (!isAuthReady || !db || !userId) {
                 errorText.textContent = "Koneksi database belum siap. Silakan coba lagi sesaat.";
                 errorMessage.classList.remove('hidden');
                 return;
             }
 
-            // --- Set Loading State ---
             submitButton.disabled = true;
             submitText.classList.add('hidden');
             submitLoading.classList.remove('hidden');
@@ -669,61 +545,171 @@
 
             try {
                 const formData = new FormData(event.target);
-                // Kita perlu cara khusus untuk menangani checkbox
-                // karena formData tidak menyertakan checkbox yang tidak dicentang
                 const data = {};
                 formDefinitions[currentFormId].fields.forEach(field => {
                     if (field.type === 'checkbox') {
-                        // Simpan sebagai boolean
                         data[field.name] = formData.get(field.name) ? true : false;
                     } else {
                         data[field.name] = formData.get(field.name);
                     }
                 });
 
-                // Tambahkan metadata
                 const submissionData = {
                     ...data,
                     formId: currentFormId,
                     formTitle: formDefinitions[currentFormId].title,
                     submittedAt: new Date().toISOString(),
-                    submittedByUserId: userId // Tetap simpan siapa yg submit, tapi di koleksi publik
+                    submittedByUserId: userId
                 };
                 
-                // [PERUBAHAN] Simpan ke koleksi PUBLIK, bukan user
-                // Path lama: `artifacts/${appId}/users/${userId}/${currentFormId}`
-                // Path baru: `artifacts/${appId}/public/data/${currentFormId}`
                 const collectionPath = `artifacts/${appId}/public/data/${currentFormId}`;
-                
-                // Simpan ke Firestore
                 const docRef = await addDoc(collection(db, collectionPath), submissionData);
 
-                // --- Handle Success ---
-                console.log('--- FORM SUBMITTED to Firestore (Public) ---');
-                console.log('Form:', formDefinitions[currentFormId].title);
-                console.log('Data:', submissionData);
-                console.log('Document ID:', docRef.id);
-                
+                console.log('--- FORM SUBMITTED to Firestore (Public) ---', docRef.id);
                 successMessage.classList.remove('hidden');
-                event.target.reset(); // Reset form
+                event.target.reset(); 
 
-                // Sembunyikan pesan sukses setelah 3 detik
                 setTimeout(() => {
                     successMessage.classList.add('hidden');
                 }, 3000);
 
             } catch (error) {
-                // --- Handle Error ---
                 console.error("Error submitting to Firestore:", error);
                 errorText.textContent = `Gagal menyimpan data: ${error.message}`;
                 errorMessage.classList.remove('hidden');
-            
             } finally {
-                // --- Reset Loading State ---
                 submitButton.disabled = false;
                 submitText.classList.remove('hidden');
                 submitLoading.classList.add('hidden');
             }
+        }
+        
+        // --- FUNGSI KHUSUS LAPORAN ---
+
+        /** [Laporan] Memuat data untuk dashboard procurement */
+        async function loadProcurementData() {
+            if (!isAuthReady) return; // Guard
+            
+            const loadingEl = document.getElementById('report-loading');
+            const metricsEl = document.getElementById('report-metrics');
+            const tablesEl = document.getElementById('report-tables');
+
+            if (!loadingEl) return; // Kita tidak di halaman laporan
+
+            loadingEl.classList.remove('hidden');
+            metricsEl.classList.add('hidden');
+            tablesEl.classList.add('hidden');
+
+            try {
+                // 1. Fetch semua data secara paralel
+                const [pembelianSnapshot, penerimaanSnapshot, selisihSnapshot, rusakSnapshot] = await Promise.all([
+                    getDocs(query(collection(db, `artifacts/${appId}/public/data/form_pembelian`))),
+                    getDocs(query(collection(db, `artifacts/${appId}/public/data/form_penerimaan`))),
+                    getDocs(query(collection(db, `artifacts/${appId}/public/data/form_selisih_stok`))),
+                    getDocs(query(collection(db, `artifacts/${appId}/public/data/log_barang_rusak`)))
+                ]);
+
+                // 2. Proses data
+                const pembelianData = pembelianSnapshot.docs.map(doc => doc.data());
+                const penerimaanData = penerimaanSnapshot.docs.map(doc => doc.data());
+                const selisihData = selisihSnapshot.docs.map(doc => doc.data());
+                const rusakData = rusakSnapshot.docs.map(doc => doc.data());
+
+                // 3. Hitung KPIs
+                let totalSpending = 0;
+                pembelianData.forEach(s => {
+                    totalSpending += (parseFloat(s.jumlah) || 0) * (parseFloat(s.harga_satuan) || 0);
+                });
+
+                let totalSelisihFisik = 0;
+                selisihData.forEach(s => {
+                    totalSelisihFisik += (parseFloat(s.stok_fisik_selisih) || 0) - (parseFloat(s.stok_sistem_selisih) || 0);
+                });
+
+                let totalRusak = 0;
+                rusakData.forEach(s => {
+                    totalRusak += (parseFloat(s.jumlah_rusak) || 0);
+                });
+
+                // 4. Render KPIs
+                metricsEl.innerHTML = `
+                    <div class="card">
+                        <h4 class="text-sm font-medium text-gray-500">Total Pembelian (Rp)</h4>
+                        <p class="text-3xl font-bold text-gray-800">${totalSpending.toLocaleString('id-ID')}</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="text-sm font-medium text-gray-500">Total Dok. Penerimaan</h4>
+                        <p class="text-3xl font-bold text-gray-800">${penerimaanData.length}</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="text-sm font-medium text-gray-500">Total Selisih Stok (Unit)</h4>
+                        <p class="text-3xl font-bold ${totalSelisihFisik < 0 ? 'text-red-600' : 'text-gray-800'}">${totalSelisihFisik}</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="text-sm font-medium text-gray-500">Total Barang Rusak (Unit)</h4>
+                        <p class="text-3xl font-bold text-red-600">${totalRusak}</p>
+                    </div>
+                `;
+
+                // 5. Render Tables
+                renderReportTable('table-container-pembelian', 'form_pembelian', pembelianData);
+                renderReportTable('table-container-penerimaan', 'form_penerimaan', penerimaanData);
+                renderReportTable('table-container-selisih', 'form_selisih_stok', selisihData);
+                renderReportTable('table-container-rusak', 'log_barang_rusak', rusakData);
+
+                // 6. Tampilkan konten
+                loadingEl.classList.add('hidden');
+                metricsEl.classList.remove('hidden');
+                tablesEl.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error loading procurement data:", error);
+                loadingEl.innerHTML = `<p class="text-red-600">Gagal memuat data: ${error.message}</p>`;
+            }
+        }
+
+        /** [Laporan] Helper untuk merender tabel data */
+        function renderReportTable(containerId, formKey, submissions) {
+            const container = document.getElementById(containerId);
+            const formDef = reportFormDefinitions[formKey]; // Gunakan definisi laporan
+            
+            if (!formDef) {
+                container.innerHTML = `<p class="text-red-500">Definisi form '${formKey}' tidak ditemukan.</p>`;
+                return;
+            }
+            if (submissions.length === 0) {
+                container.innerHTML = `<p class="text-gray-500">Tidak ada data untuk ditampilkan.</p>`;
+                return;
+            }
+
+            const fields = formDef.fields;
+            
+            let tableHtml = '<table class="w-full table-auto"><thead><tr>';
+            fields.forEach(field => { tableHtml += `<th>${field.label}</th>`; });
+            tableHtml += '<th>Waktu Submit</th></tr></thead>';
+            tableHtml += '<tbody>';
+            
+            // Urutkan data terbaru di atas
+            const sortedSubmissions = submissions.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+            sortedSubmissions.forEach(sub => {
+                tableHtml += '<tr>';
+                fields.forEach(field => {
+                    let value = sub[field.name];
+                    if (typeof value === 'boolean') { value = value ? 'Ya' : 'Tidak'; }
+                    else if (!value) { value = '-'; }
+                    // Potong teks panjang
+                    if (typeof value === 'string' && value.length > 50) {
+                        value = value.substring(0, 50) + '...';
+                    }
+                    tableHtml += `<td>${value}</td>`;
+                });
+                const submittedAt = new Date(sub.submittedAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+                tableHtml += `<td class="text-xs text-gray-500">${submittedAt}</td>`;
+                tableHtml += '</tr>';
+            });
+            tableHtml += '</tbody></table>';
+            container.innerHTML = tableHtml;
         }
 
         // --- INISIALISASI ---
@@ -737,42 +723,39 @@
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                setLogLevel('Debug'); // Aktifkan log debug Firestore
+                setLogLevel('Debug'); 
 
-                // Pantau status autentikasi
                 onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        // Pengguna sudah sign-in
-                        userId = user.uid;
-                    } else {
-                        // Belum ada pengguna, coba sign-in
+                    if (!user) {
                         try {
                             if (initialAuthToken) {
-                                // Gunakan token kustom jika ada (ini default di Canvas)
                                 await signInWithCustomToken(auth, initialAuthToken);
                             } else {
-                                // Fallback ke sign-in anonim (jika di luar Canvas)
                                 await signInAnonymously(auth);
                             }
-                            
-                            userId = auth.currentUser?.uid || crypto.randomUUID();
                         } catch (authError) {
                             console.error("Firebase Auth sign-in failed:", authError);
-                            throw new Error("Gagal melakukan autentikasi.");
                         }
                     }
-                    
+                    userId = auth.currentUser?.uid || crypto.randomUUID();
                     isAuthReady = true;
                     console.log('Firebase Auth Ready. UserID:', userId);
                     
-                    // Jika kita sedang di halaman form, update tombolnya
+                    // Update UI berdasarkan view saat ini
                     if (currentView === 'form') {
                         updateFormButtonStatus();
+                    } else if (currentView === 'report') {
+                        // Jika kita SUDAH di halaman laporan saat auth siap
+                        const authStatusEl = document.getElementById('auth-status-report');
+                        if (authStatusEl) {
+                             authStatusEl.innerHTML = `<p class="text-green-600">Terhubung ke database.</p>`;
+                        }
+                        // PENTING: Muat data sekarang
+                        loadProcurementData();
                     }
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
-                // Tampilkan error ke pengguna di main content
                 mainContentEl.innerHTML = `
                     <div class="card bg-red-100 border border-red-400 text-red-700 p-4 rounded-lg">
                         <strong class="font-bold">Error Kritis:</strong>
@@ -784,16 +767,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderSidebar();
             renderMainContent();
-            initializeAppFirebase(); // Mulai koneksi Firebase saat DOM siap
+            initializeAppFirebase();
         });
 
         // --- Attach handlers to window ---
-        // Ini diperlukan karena kita menggunakan <script type="module">
-        // dan onclick="" di HTML butuh akses ke fungsi global.
         window.showSopDetail = showSopDetail;
         window.showForm = showForm;
         window.goBackToSop = goBackToSop;
         window.handleFormSubmit = handleFormSubmit;
+        window.showReportView = showReportView;
+        // Kita tidak lagi butuh handleFormChange di global
+        // window.handleFormChange = handleFormChange;
 
     </script>
 </body>
