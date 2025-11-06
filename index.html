@@ -87,6 +87,24 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+        // --- PENGATURAN MANUAL UNTUK LOKAL / HOSTING DI LUAR CANVAS ---
+        // Kita komentari bagian ini karena kita menjalankan di dalam Canvas
+        /*
+        const firebaseConfig = {
+          apiKey: "GANTI_DENGAN_API_KEY_ANDA",
+          authDomain: "GANTI_DENGAN_AUTH_DOMAIN_ANDA",
+          projectId: "GANTI_DENGAN_PROJECT_ID_ANDA",
+          storageBucket: "GANTI_DENGAN_STORAGE_BUCKET_ANDA",
+          messagingSenderId: "GANTI_DENGAN_SENDER_ID_ANDA",
+          appId: "GANTI_DENGAN_APP_ID_ANDA"
+        };
+        
+        // Atur appId & token secara manual karena kita di luar Canvas
+        const appId = firebaseConfig.projectId || 'default-app-id';
+        const initialAuthToken = null;
+        */
+        // --- AKHIR PENGATURAN MANUAL ---
+
 
         // --- DATA APLIKASI ---
 
@@ -738,12 +756,17 @@
                         // Belum ada pengguna, coba sign-in
                         try {
                             if (initialAuthToken) {
-                                // Gunakan token kustom jika ada
+                                // Gunakan token kustom jika ada (ini default di Canvas)
                                 await signInWithCustomToken(auth, initialAuthToken);
                             } else {
-                                // Fallback ke sign-in anonim
+                                // Fallback ke sign-in anonim (jika di luar Canvas)
                                 await signInAnonymously(auth);
                             }
+                            
+                            // Baris di bawah ini dikomentari karena kita menggunakan
+                            // token kustom atau anonim di atas
+                            // await signInAnonymously(auth);
+
                             userId = auth.currentUser?.uid || crypto.randomUUID();
                         } catch (authError) {
                             console.error("Firebase Auth sign-in failed:", authError);
