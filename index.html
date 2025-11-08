@@ -2239,12 +2239,19 @@
       // Get unique batch IDs from completed batches
       let completedBatches = allRecords.filter(r => r.type === 'batch_item' && r.batch_status === 'completed');
       
+      // Get existing surat jalan to exclude already processed batches
+      const existingSuratJalan = allRecords.filter(r => r.type === 'surat_jalan');
+      const processedBatchIds = new Set(existingSuratJalan.map(sj => sj.batch_id));
+      
       // CRITICAL: For kasir, filter completed batches to only include items for their site
       if (currentUser && currentUser.role === 'kasir') {
-        completedBatches = completedBatches.filter(item => item.site_tujuan === currentUser.site);
+        completedBatches = completedBatches.filter(item => 
+          item.site_tujuan === currentUser.site || 
+          item.site_tujuan.includes(currentUser.site)
+        );
       }
       
-      // Group by batch ID
+      // Group by batch ID - don't exclude processed batches for now to debug
       const batchGroups = {};
       completedBatches.forEach(item => {
         if (!batchGroups[item.batch_id]) {
@@ -2278,6 +2285,14 @@
           option.textContent = `${batchId} - ${sites.join(', ')} (${totalItems} items - Rp ${totalValue.toLocaleString('id-ID')})`;
           selectBatchId.appendChild(option);
         }
+      });
+      
+      // Debug log
+      console.log('Batch selection updated:', {
+        totalRecords: allRecords.length,
+        completedBatches: completedBatches.length,
+        availableBatches: Object.keys(batchGroups).length,
+        processedBatchIds: Array.from(processedBatchIds)
       });
     }
 
@@ -2594,16 +2609,23 @@
         setTimeout(() => {
           switchTab('surat-jalan');
           
-          // Auto-select the completed batch in surat jalan
+          // Force update batch dropdown first
           setTimeout(() => {
-            const selectBatchId = document.getElementById('select-batch-id');
-            if (selectBatchId) {
-              selectBatchId.value = completedBatchId;
-              handleBatchSelection();
-            }
-          }, 500);
-          
-          showToast('📋 Silakan buat surat jalan untuk batch yang baru diselesaikan');
+            updateBatchSelectionDropdown();
+            
+            // Auto-select the completed batch in surat jalan
+            setTimeout(() => {
+              const selectBatchId = document.getElementById('select-batch-id');
+              if (selectBatchId) {
+                console.log('Available options:', Array.from(selectBatchId.options).map(opt => opt.value));
+                console.log('Trying to select:', completedBatchId);
+                selectBatchId.value = completedBatchId;
+                handleBatchSelection();
+              }
+            }, 200);
+            
+            showToast('📋 Silakan buat surat jalan untuk batch yang baru diselesaikan');
+          }, 300);
         }, 1000);
         
       } catch (error) {
@@ -4702,5 +4724,5 @@
     // Initialize app when DOM is loaded
     document.addEventListener('DOMContentLoaded', initApp);
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99b37b2fb7730d7e',t:'MTc2MjU4ODI0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99b3835602ded8e3',t:'MTc2MjU4ODU3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
